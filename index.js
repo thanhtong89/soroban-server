@@ -5,7 +5,7 @@ const PORT = process.env.PORT || 5000
 const DATABASE = "./private/scores.json";
 const DATABASE_PREV = "./private/scores_prev.json";
 
-const MAX_SCORE_ENTRIES = 3;
+const MAX_SCORE_ENTRIES = 10;
 var fs = require('fs');
 
 var app = express()
@@ -24,7 +24,7 @@ app.get('/reset-date', (req, res) => {
 });
 
 app.get('/scores/prev', (req, res) => {
-    var scoreTally = loadScoresFromDisk(DATABASE);
+    var scoreTally = loadScoresFromDisk(DATABASE_PREV);
     if (scoreTally === null) {
         scoreTally = {"top_scores" : {}};
     }
@@ -73,10 +73,11 @@ function handlePost(req, res) {
         res.json(scoreTally);
         return;
     }
-    var newScoreTally = updateNewScore(newScoreEntry, scoreTally.top_scores);
-    console.log("New score table", newScoreTally);
-    saveScoresToDisk(DATABASE, newScoreTally);
-    res.json(newScoreTally);
+    updateNewScore(newScoreEntry, scoreTally.top_scores);
+    var updatedTopScores = getTopScores(scoreTally.top_scores);
+    console.log("Current top Scores: ", updatedTopScores);
+    saveScoresToDisk(DATABASE, scoreTally);
+    res.json(updatedTopScores);
 }
 
 function updateNewScore(newEntry, topScores) {
@@ -92,6 +93,9 @@ function updateNewScore(newEntry, topScores) {
             attempts: 1,
         };
     }
+}
+
+function getTopScores(topScores) {
     // perform the sorting and trimming
     var newScoreList = [];
     Object.keys(topScores).forEach(name =>  {
@@ -157,11 +161,9 @@ function watchAndResetScores() {
         resetScore();
         nextResetDate = getNextResetDate();
         console.log("New reset date = ", nextResetDate);
-    } else {
-        console.log("Checking if need to reset ");
     }
 }
 
-setInterval(watchAndResetScores, 5000);
+setInterval(watchAndResetScores, 60*1000);
 
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));
