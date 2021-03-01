@@ -81,7 +81,8 @@ function handlePost(req, res) {
 }
 
 function updateNewScore(newEntry, topScores) {
-    const name = newEntry.name;
+    // prune spaces from string
+    const name = newEntry.name.trim();
     if (name in topScores) {
         console.log("updating current score entry ");
         topScores[name].score += newEntry.score;
